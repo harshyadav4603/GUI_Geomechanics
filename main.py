@@ -18,6 +18,7 @@ from app.data_loader import DataManager
 from app.pages.home import HomePage
 from app.pages.stress import StressPage
 from app.pages.moduli import ModuliPage
+from app.pages.strength import StrengthPage
 from app.pages.placeholder import PlaceholderPage
 
 
@@ -31,9 +32,7 @@ NAV_ITEMS = [
     {"key": "home",      "label": "HOME",                  "icon": "home",     "color": "#00d4ff"},
     {"key": "stress",    "label": "STRESS",                 "icon": "stress",   "color": "#ff6b6b"},
     {"key": "moduli",    "label": "MODULI",                 "icon": "moduli",   "color": "#feca57"},
-    {"key": "rock",      "label": "ROCK PHYSICS",           "icon": "rock",     "color": "#48dbfb"},
     {"key": "strength",  "label": "STRENGTH &\nFAILURE",    "icon": "strength", "color": "#ff9ff3"},
-    {"key": "wellbore",  "label": "WELLBORE\nSTABILITY",    "icon": "wellbore", "color": "#00d2d3"},
 ]
 
 
@@ -150,6 +149,8 @@ class GeomechanicsApp(ctk.CTk):
                 page = StressPage(self.content, data_manager=self.dm)
             elif key == "moduli":
                 page = ModuliPage(self.content, data_manager=self.dm)
+            elif key == "strength":
+                page = StrengthPage(self.content, data_manager=self.dm)
             else:
                 # Find matching nav item for title/color
                 info = next((n for n in NAV_ITEMS if n["key"] == key), None)
