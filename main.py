@@ -4,12 +4,20 @@ Geomechanics GUI – Main Application Window
 Entry point that assembles the sidebar navigation and page container.
 """
 
+# Initialise matplotlib backend BEFORE any other matplotlib import
+import matplotlib
+matplotlib.use("TkAgg")
+
+import sys
+import traceback
 import customtkinter as ctk
 from PIL import Image
 
 from app.icons import get_icon
 from app.data_loader import DataManager
 from app.pages.home import HomePage
+from app.pages.stress import StressPage
+from app.pages.moduli import ModuliPage
 from app.pages.placeholder import PlaceholderPage
 
 
@@ -37,6 +45,9 @@ class GeomechanicsApp(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+
+        # ── catch silent Tk callback errors ───────────────────────
+        self.report_callback_exception = self._on_tk_error
 
         # ── window setup ──────────────────────────────────────────
         self.title("Geomechanics Workbench")
@@ -123,23 +134,40 @@ class GeomechanicsApp(ctk.CTk):
         # Pre-create pages (lazy dict)
         self.pages: dict[str, ctk.CTkFrame] = {}
 
+    @staticmethod
+    def _on_tk_error(exc_type, exc_value, exc_tb):
+        """Print Tk callback exceptions to stderr instead of swallowing them."""
+        traceback.print_exception(exc_type, exc_value, exc_tb)
+
     def _get_page(self, key: str) -> ctk.CTkFrame:
         if key in self.pages:
             return self.pages[key]
 
-        if key == "home":
-            page = HomePage(self.content, data_manager=self.dm)
-        else:
-            # Find matching nav item for title/color
-            info = next((n for n in NAV_ITEMS if n["key"] == key), None)
-            title = info["label"].replace("\n", " ") if info else key.upper()
-            color = info["color"] if info else "#ffffff"
-            icon_map = {
-                "stress": "🔴", "moduli": "📈", "rock": "🪨",
-                "strength": "💪", "wellbore": "🕳️",
-            }
-            page = PlaceholderPage(self.content, title=title,
-                                    icon_text=icon_map.get(key, "📦"), color=color)
+        try:
+            if key == "home":
+                page = HomePage(self.content, data_manager=self.dm)
+            elif key == "stress":
+                page = StressPage(self.content, data_manager=self.dm)
+            elif key == "moduli":
+                page = ModuliPage(self.content, data_manager=self.dm)
+            else:
+                # Find matching nav item for title/color
+                info = next((n for n in NAV_ITEMS if n["key"] == key), None)
+                title = info["label"].replace("\n", " ") if info else key.upper()
+                color = info["color"] if info else "#ffffff"
+                icon_map = {
+                    "stress": "🔴", "moduli": "📈", "rock": "🪨",
+                    "strength": "💪", "wellbore": "🕳️",
+                }
+                page = PlaceholderPage(self.content, title=title,
+                                        icon_text=icon_map.get(key, "📦"), color=color)
+        except Exception:
+            traceback.print_exc()
+            # Fallback to a simple error frame
+            page = ctk.CTkFrame(self.content, fg_color="#0d1117")
+            ctk.CTkLabel(page, text=f"Error loading {key} page – see terminal",
+                         text_color="#ff6b6b", font=ctk.CTkFont(size=16)).pack(
+                             expand=True)
 
         self.pages[key] = page
         return page
