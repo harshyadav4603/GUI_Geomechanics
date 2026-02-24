@@ -146,14 +146,15 @@ class ModuliPage(ctk.CTkFrame):
                      text_color="#feca57", fg_color=CLR_CARD2).place(x=12, y=-9)
 
     def _combo(self, parent, row, label) -> ctk.CTkComboBox:
-        ctk.CTkLabel(parent, text=label, font=ctk.CTkFont(size=11),
-                     text_color=CLR_DIM).grid(row=row, column=0, padx=12,
-                                               pady=(4, 0), sticky="w")
-        cmb = ctk.CTkComboBox(parent, values=["(load data first)"], width=240,
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.grid(row=row, column=0, columnspan=2, padx=12, pady=(4, 2), sticky="ew")
+        ctk.CTkLabel(frame, text=label, font=ctk.CTkFont(size=11),
+                     text_color=CLR_DIM).pack(anchor="w")
+        cmb = ctk.CTkComboBox(frame, values=["(load data first)"], width=240,
                                fg_color=CLR_INPUT, button_color=CLR_INPUT,
                                border_color="#1a5276",
                                dropdown_fg_color=CLR_INPUT, state="readonly")
-        cmb.grid(row=row, column=0, columnspan=2, padx=12, pady=(22, 2), sticky="w")
+        cmb.pack(anchor="w", pady=(2, 0))
         return cmb
 
     @staticmethod
@@ -236,10 +237,10 @@ class ModuliPage(ctk.CTkFrame):
                 ],
             },
             {
-                "title": "Impedances (MRayl)",
+                "title": "Impedances",
                 "curves": [
-                    ("AI (MRayl)", "#ff9ff3", "-"),
-                    ("SI (MRayl)", "#00d2d3", "-"),
+                    ("Acoustic Impedance", "#ff9ff3", "-"),
+                    ("Shear Impedance", "#00d2d3", "-"),
                 ],
             },
             {

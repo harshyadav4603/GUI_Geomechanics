@@ -91,10 +91,12 @@ def compute_overburden(depth: np.ndarray, density: np.ndarray) -> np.ndarray:
          First value set = density[0] * g * depth[0].
     """
     integrand = density * G  # ρ·g  (Pa/m)
-    Sv = cumulative_trapezoid(integrand, depth, initial=0)
-    # At z=0 the integral is 0; replace with surface estimate
-    if len(Sv) > 0:
-        Sv[0] = density[0] * G * depth[0]
+    # cumulative_trapezoid integrates from depth[0] onward (Sv_inc[0]=0)
+    Sv_inc = cumulative_trapezoid(integrand, depth, initial=0)
+    # Estimate overburden above first measurement (assume constant ρ from surface)
+    Sv_above = density[0] * G * depth[0]
+    # Add surface contribution to ALL rows so every depth gets the full column
+    Sv = Sv_inc + Sv_above
     return Sv
 
 
@@ -106,9 +108,10 @@ def compute_overburden_ppg(depth_ft: np.ndarray, density_gcc: np.ndarray) -> np.
         Sv(psi) = 0.4335 · ∫₀ᶻ ρ(z) dz   (with ρ in g/cc, z in ft)
     """
     integrand = 0.4335 * density_gcc  # psi/ft
-    Sv = cumulative_trapezoid(integrand, depth_ft, initial=0)
-    if len(Sv) > 0:
-        Sv[0] = 0.4335 * density_gcc[0] * depth_ft[0]
+    Sv_inc = cumulative_trapezoid(integrand, depth_ft, initial=0)
+    # Estimate overburden above first measurement (assume constant ρ from surface)
+    Sv_above = 0.4335 * density_gcc[0] * depth_ft[0]
+    Sv = Sv_inc + Sv_above
     return Sv
 
 
@@ -208,7 +211,8 @@ def compute_all_stresses(depth: np.ndarray,
                          poisson: float | np.ndarray = 0.25,
                          tectonic: float = 0.0,
                          strain_ratio: float = 1.0,
-                         unit_system: str = "SI") -> pd.DataFrame:
+                         unit_system: str = "SI",
+                         water_density: float = 1025.0) -> pd.DataFrame:
     """
     Master function – computes every stress column and returns a DataFrame.
 
@@ -223,6 +227,7 @@ def compute_all_stresses(depth: np.ndarray,
     tectonic     : tectonic stress addition (same unit as stress).
     strain_ratio : ε_H/ε_h  for SHmax model.
     unit_system  : 'SI' (m, kg/m³ → Pa) or 'FIELD' (ft, g/cc → psi).
+    water_density: water density for hydrostatic Pp (kg/m³ for SI, default 1025).
 
     Returns
     -------
@@ -250,7 +255,7 @@ def compute_all_stresses(depth: np.ndarray,
     else:
         Sv = compute_overburden(depth, density)
         if Pp is None:
-            Pp = compute_hydrostatic_pore_pressure(depth)
+            Pp = compute_hydrostatic_pore_pressure(depth, water_density=water_density)
 
     Pp = np.asarray(Pp, dtype=float)
     Sv_grad = compute_vertical_stress_gradient(depth, Sv)

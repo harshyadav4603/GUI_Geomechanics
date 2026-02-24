@@ -241,8 +241,7 @@ def compute_all_moduli(
     # ── Impedances ────────────────────────────────────────────────
     AI = acoustic_impedance(rho_si, Vp_si)
     SI_val = shear_impedance(rho_si, Vs_si)
-    AI_MRayl = AI * 1e-6
-    SI_MRayl = SI_val * 1e-6
+
 
     # ── Compressibility ───────────────────────────────────────────
     beta = compressibility(K_GPa)
@@ -266,11 +265,8 @@ def compute_all_moduli(
         "λ (GPa)":             lam_GPa,
         "M (GPa)":             M_GPa,
         # Impedances
-        "AI (MRayl)":          AI_MRayl,
-        "SI (MRayl)":          SI_MRayl,
+        "Acoustic Impedance":  AI,
+        "Shear Impedance":     SI_val,
         # Compressibility
         "β (1/GPa)":           beta,
-        # Auxiliary
-        "λρ (GPa·g/cc)":       LR * to_GPa,
-        "μρ (GPa·g/cc)":       MR * to_GPa,
     })

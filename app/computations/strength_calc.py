@@ -172,8 +172,10 @@ def _compute_stresses(depth: np.ndarray, rho_si: np.ndarray,
     """Return Sv, Pp, Shmin, SHmax in Pa then convert to MPa."""
     # Overburden
     integrand = rho_si * G_ACC
-    Sv = np.zeros_like(depth)
-    Sv[1:] = cumulative_trapezoid(integrand, depth)
+    Sv_inc = cumulative_trapezoid(integrand, depth, initial=0)
+    # Add overburden above first measurement (assume constant ρ from surface)
+    Sv_above = rho_si[0] * G_ACC * depth[0]
+    Sv = Sv_inc + Sv_above
     Sv_MPa = Sv * 1e-6
 
     # Hydrostatic Pp

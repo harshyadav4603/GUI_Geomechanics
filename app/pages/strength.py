@@ -89,19 +89,19 @@ class StrengthPage(ctk.CTkFrame):
         self._section(panel, r, "Model Parameters"); r += 1
 
         # Friction angle method
-        ctk.CTkLabel(panel, text="Friction angle method",
+        friction_frame = ctk.CTkFrame(panel, fg_color="transparent")
+        friction_frame.grid(row=r, column=0, columnspan=2, padx=12, pady=(4, 2), sticky="ew")
+        ctk.CTkLabel(friction_frame, text="Friction angle method",
                      font=ctk.CTkFont(size=11),
-                     text_color=CLR_DIM).grid(row=r, column=0, padx=12,
-                                               pady=(4, 0), sticky="w")
+                     text_color=CLR_DIM).pack(anchor="w")
         self.friction_var = ctk.StringVar(value="Lal (1999) — from Vp")
         self.cmb_friction = ctk.CTkComboBox(
-            panel, values=["Lal (1999) — from Vp",
+            friction_frame, values=["Lal (1999) — from Vp",
                            "Chang (2006) — from ν"],
             variable=self.friction_var, width=240, fg_color=CLR_INPUT,
             button_color=CLR_INPUT, border_color="#1a5276",
             dropdown_fg_color=CLR_INPUT, state="readonly")
-        self.cmb_friction.grid(row=r, column=0, columnspan=2, padx=12,
-                                pady=(22, 2), sticky="w")
+        self.cmb_friction.pack(anchor="w", pady=(2, 0))
         r += 1
 
         self.ent_tensile = self._entry(panel, r, "Tensile Strength T (MPa)", "0.0"); r += 1
@@ -156,14 +156,15 @@ class StrengthPage(ctk.CTkFrame):
                      text_color="#ff9ff3", fg_color=CLR_CARD2).place(x=12, y=-9)
 
     def _combo(self, parent, row, label) -> ctk.CTkComboBox:
-        ctk.CTkLabel(parent, text=label, font=ctk.CTkFont(size=11),
-                     text_color=CLR_DIM).grid(row=row, column=0, padx=12,
-                                               pady=(4, 0), sticky="w")
-        cmb = ctk.CTkComboBox(parent, values=["(load data first)"], width=240,
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.grid(row=row, column=0, columnspan=2, padx=12, pady=(4, 2), sticky="ew")
+        ctk.CTkLabel(frame, text=label, font=ctk.CTkFont(size=11),
+                     text_color=CLR_DIM).pack(anchor="w")
+        cmb = ctk.CTkComboBox(frame, values=["(load data first)"], width=240,
                                fg_color=CLR_INPUT, button_color=CLR_INPUT,
                                border_color="#1a5276",
                                dropdown_fg_color=CLR_INPUT, state="readonly")
-        cmb.grid(row=row, column=0, columnspan=2, padx=12, pady=(22, 2), sticky="w")
+        cmb.pack(anchor="w", pady=(2, 0))
         return cmb
 
     @staticmethod
