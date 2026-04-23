@@ -1,0 +1,758 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{tocloft}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+    pdftitle={Geomechanics GUI Thesis},
+    pdfauthor={Thesis Author}
+}
+
+\onehalfspacing
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codecomment}{RGB}{0,110,0}
+\definecolor{codekeyword}{RGB}{0,0,150}
+\definecolor{codestring}{RGB}{163,21,21}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{codecomment},
+    keywordstyle=\color{codekeyword}\bfseries,
+    stringstyle=\color{codestring},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    showstringspaces=false,
+    frame=single,
+    tabsize=4
+}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\Huge}
+  {\chaptername\ \thechapter}{20pt}{\Huge}
+
+\title{\textbf{Graphical User Interface (GUI) Designing Towards Creation of a Desktop-Based Application Applicable to Geomechanics Study}}
+\author{Your Name \\ Department of Earth Sciences / Petroleum Engineering \\ Your University}
+\date{April 2026}
+
+\begin{document}
+
+\pagenumbering{roman}
+\maketitle
+
+\chapter*{Declaration}
+I declare that this thesis titled \emph{Graphical User Interface (GUI) Designing Towards Creation of a Desktop-Based Application Applicable to Geomechanics Study} is my original work and has not been submitted for any other degree award. Sources of information used in this study have been duly acknowledged.
+
+\chapter*{Dedication}
+This work is dedicated to students, researchers, and practitioners in geomechanics and seismic interpretation who require practical computational tools that are transparent, reproducible, and easy to use.
+
+\chapter*{Acknowledgements}
+I acknowledge the support of my supervisors, colleagues, and all open-source contributors whose libraries made this work possible. I also appreciate feedback from domain users who guided the design priorities of this desktop application.
+
+\chapter*{Abstract}
+This thesis presents the design and implementation of a desktop-based Graphical User Interface (GUI) for geomechanics study, named \emph{Geomechanics Workbench}. The motivation is to bridge the gap between advanced geomechanical equations and practical day-to-day interpretation workflows used by engineers and geoscientists. Conventional workflows often rely on fragmented spreadsheets, scripts, and manual plotting that increase effort and risk of inconsistency. The developed system provides an integrated environment for loading well-log data, computing geomechanical parameters, visualizing depth-dependent trends, and exporting reproducible outputs.
+
+The application is implemented in Python using CustomTkinter for GUI components, Pandas and NumPy for data processing, SciPy for numerical integration, and Matplotlib for embedded scientific plots. The software architecture is modular, comprising dedicated computational engines for stress analysis, elastic moduli analysis, and strength/failure analysis, alongside a seismic interpretation module supporting SEG-Y loading and synthetic-cube generation. Input data are accepted in CSV and Excel formats for geomechanics workflows and SEG-Y for seismic workflows.
+
+Implemented geomechanical computations include overburden stress, pore pressure, effective stress, minimum and maximum horizontal stress, stress ratios, dynamic Poisson's ratio, dynamic elastic moduli, impedance metrics, brittleness index, friction angle, unconfined compressive strength, cohesion, Coulomb failure stress, and fracture initiation pressure. A GUI-driven column-mapping workflow allows flexible adaptation to varied field datasets while preserving formula transparency through in-page equation references.
+
+The thesis documents design rationale, architecture, module interactions, mathematical formulation, implementation details, validation approach, limitations, and future enhancements. Results show that a carefully structured desktop GUI can significantly improve usability, consistency, and interpretability for geomechanics analysis without sacrificing analytical rigor. The study concludes that desktop GUI tools remain highly relevant for technical domains where offline capability, direct data control, and explainable workflows are required.
+
+\tableofcontents
+\listoftables
+\listoffigures
+
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+\section{Background}
+Geomechanics is fundamental to drilling, reservoir development, completion design, hydraulic fracturing, sand production assessment, and wellbore stability management. Core decisions in these areas rely on accurate estimation of in-situ stresses, rock elastic properties, and strength/failure behavior. Although equations are well established in literature, practical analysis often remains operationally difficult due to heterogeneous data sources, unit inconsistencies, and repetitive manual processing.
+
+In many technical environments, analysts still combine spreadsheets, plotting software, and ad hoc scripts. This practice can be effective for experts but presents significant barriers for consistency, quality assurance, collaboration, and onboarding. A domain-specific desktop GUI can provide structured workflows that enforce coherent data flow from input to results and help users focus on interpretation rather than software mechanics.
+
+\section{Problem Statement}
+There is a need for a practical, transparent, and reusable desktop platform that:
+\begin{itemize}
+    \item accepts common geomechanics data formats;
+    \item computes key geomechanical metrics using documented equations;
+    \item visualizes depth trends with scientific plotting controls;
+    \item supports export and reproducibility;
+    \item extends into seismic interpretation workflows.
+\end{itemize}
+
+\section{Aim and Objectives}
+\textbf{Aim:} To design and develop a desktop-based GUI application applicable to geomechanics study, integrating data handling, computation, visualization, and interpretation support.
+
+\textbf{Objectives:}
+\begin{itemize}
+    \item Design a modular GUI architecture suitable for technical scientific workflows.
+    \item Implement robust data loading and state sharing across analysis pages.
+    \item Implement stress, elastic moduli, and strength/failure computational engines.
+    \item Integrate a seismic interpretation viewer with SEG-Y support.
+    \item Validate usability and computational plausibility using representative datasets.
+    \item Document limitations and propose an extensibility roadmap.
+\end{itemize}
+
+\section{Research Questions}
+\begin{enumerate}
+    \item How can a desktop GUI improve operational efficiency in geomechanics analysis compared with fragmented tools?
+    \item Can modular design maintain computational transparency while improving usability?
+    \item What architecture enables integration of both well-log geomechanics and seismic interpretation in one application?
+\end{enumerate}
+
+\section{Scope of Study}
+The developed system focuses on desktop execution and single-user scientific workflows. It targets deterministic equation-based geomechanical analysis from well-log style tabular inputs and 2D section-based seismic interpretation from 3D cubes. The scope does not include cloud deployment, multi-user collaboration services, or fully automated inversion frameworks.
+
+\chapter{Literature and Conceptual Review}
+\section{GUI in Scientific and Engineering Computing}
+Scientific computing interfaces have evolved from command-line environments toward mixed paradigms where scripting and GUI complement each other. GUI layers are especially useful for repetitive, parameterized workflows requiring user-guided decision points, such as column mapping, unit control, and plot inspection. In engineering, GUI adoption is strongest where visual validation is central to trust.
+
+\section{Geomechanics Workflow Requirements}
+A geomechanics workflow usually includes:
+\begin{itemize}
+    \item preprocessing and quality screening of depth-indexed data;
+    \item stress estimation from density and pore pressure assumptions;
+    \item elastic property derivation from sonic and density logs;
+    \item failure envelope parameters and fracture pressure indicators;
+    \item comparative visualization versus depth and export to reports.
+\end{itemize}
+These steps require consistent units, robust handling of invalid values, and tractable human-readable outputs.
+
+\section{Desktop vs Web for Domain Tools}
+While web applications provide deployment convenience, desktop systems remain attractive for geoscience workflows because of offline operation, local data governance, direct file access, and reduced dependency on network infrastructure. Python desktop frameworks also provide mature scientific integration with minimal impedance mismatch.
+
+\section{Related Methods in Geomechanics}
+The equations implemented in this study are aligned with commonly used formulations, including overburden integration, hydrostatic pore pressure estimation, dynamic elastic moduli from sonic velocities, Mohr-Coulomb relations, and empirical UCS estimation from elastic modulus. The thesis emphasizes implementation transparency so formulas are visible and traceable in software context.
+
+\section{Conceptual Framework of the Study}
+The conceptual foundation of this thesis is built on the principle that scientific decision quality in geomechanics depends on three tightly coupled elements: mathematical rigor, computational traceability, and user interaction quality. If any one of these three pillars is weak, interpretation confidence decreases.
+
+Accordingly, this work models the software workflow as a closed loop:
+\begin{enumerate}
+    \item \textbf{Data acquisition and conditioning:} raw tabular well data and seismic volume data are loaded and minimally standardized.
+    \item \textbf{Deterministic computation:} equations are applied in transparent sequence with explicit unit handling and numerical safeguards.
+    \item \textbf{Visual and tabular interpretation:} users inspect trends, compare parameters, and identify anomalies.
+    \item \textbf{Feedback and correction:} users adjust mapping or model parameters and re-compute.
+\end{enumerate}
+
+This loop transforms geomechanics analysis from a static one-shot calculation into an interactive and inspectable analytical process.
+
+\section{Human-Centered Design Considerations in Technical GUIs}
+Beyond correctness of formulas, domain software must support cognitive workflows used by engineers. The design in this study therefore incorporates practical human-centered choices:
+\begin{itemize}
+    \item progressive disclosure (users see only controls needed for the current page);
+    \item visual grouping of controls, formulas, plots, and outputs;
+    \item immediate error messaging with actionable corrections;
+    \item consistent interaction pattern across domain modules.
+\end{itemize}
+
+These design choices reduce mode-switching and memory burden, which are common sources of user error in mixed spreadsheet-script workflows.
+
+\chapter{Methodology}
+\section{Research and Development Strategy}
+The work follows a design-science and iterative prototyping approach:
+\begin{enumerate}
+    \item define user and domain requirements;
+    \item implement a shared data state and page navigation shell;
+    \item build domain pages incrementally (Stress, Moduli, Strength, Seismic);
+    \item test with representative data and edge cases;
+    \item refine usability and robustness;
+    \item document architecture and outcomes.
+\end{enumerate}
+
+\section{Requirements Elicitation and Functional Decomposition}
+Requirements were elicited from expected geomechanics operations in academic and field-like contexts. They were decomposed into functional blocks to guide implementation.
+
+\textbf{Primary functional requirements:}
+\begin{itemize}
+    \item ingest well-log data in common formats without manual preconversion;
+    \item compute stress, moduli, and strength outputs from mapped columns;
+    \item provide depth-indexed visualization and exportable tables;
+    \item support seismic section viewing with interpretation picks;
+    \item preserve workflow continuity across pages with shared dataset state.
+\end{itemize}
+
+\textbf{Non-functional requirements:}
+\begin{itemize}
+    \item responsiveness during interactive slider and plotting operations;
+    \item numerical stability under missing or inconsistent data;
+    \item maintainability through modular code structure;
+    \item portability within standard Python desktop environments.
+\end{itemize}
+
+\section{End-to-End Workflow Definition}
+The complete user flow implemented in the application is:
+\begin{enumerate}
+    \item launch desktop app and select workspace (Geomechanics or Seismic);
+    \item load dataset and inspect table preview;
+    \item map columns and choose unit/model parameters;
+    \item execute computations and inspect multipanel plots;
+    \item export derived data for reporting or further modeling;
+    \item optionally transition to seismic interpretation and export picks.
+\end{enumerate}
+
+This sequence was intentionally standardized across analysis pages to reduce retraining when changing domain tasks.
+
+\section{Technology Stack}
+\begin{table}[H]
+\centering
+\caption{Core technologies used in the application}
+\begin{tabular}{p{4cm}p{10cm}}
+\toprule
+Component & Purpose \\
+\midrule
+Python & Primary implementation language \\
+CustomTkinter & Themed desktop GUI framework \\
+Pandas & Tabular data loading and manipulation \\
+NumPy & Numerical arrays and vectorized equations \\
+SciPy & Numerical integration and scientific utilities \\
+Matplotlib & Embedded plotting and interaction \\
+OpenPyXL & Excel file support \\
+segyio (optional) & SEG-Y seismic data loading \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Design Principles Applied}
+\begin{itemize}
+    \item \textbf{Modularity:} each computation domain is isolated in a dedicated module.
+    \item \textbf{Transparency:} equations are shown in GUI and reflected directly in code.
+    \item \textbf{Resilience:} invalid states are trapped and users are informed with clear messages.
+    \item \textbf{Usability:} column auto-mapping and single-click compute/export actions reduce friction.
+    \item \textbf{Extensibility:} page-based architecture supports addition of future modules.
+\end{itemize}
+
+\section{Methodological Justification for Tool Choices}
+The selected technologies are aligned with scientific desktop constraints. CustomTkinter provides modern widget theming without sacrificing Tkinter stability. Pandas and NumPy support robust vectorized computation over depth-indexed series. SciPy supplies numerical integration utilities required for stress accumulation. Matplotlib provides mature publication-grade plotting and interactive tools in embedded desktop contexts.
+
+The integrated use of these libraries allows implementation of a complete analytical system with limited dependency overhead and high transparency for academic review.
+
+\chapter{System Analysis and Architecture}
+\section{Project Structure}
+The system is organized around a root entry point and an \texttt{app/} package containing page modules, computation engines, data loading utilities, icons, and seismic utilities.
+
+\begin{lstlisting}[style=pythonstyle,caption={Simplified structure of implemented solution}]
+main.py
+app/
+  data_loader.py
+  computations/
+    stress_calc.py
+    moduli_calc.py
+    strength_calc.py
+  pages/
+    landing.py
+    home.py
+    stress.py
+    moduli.py
+    strength.py
+    seismic.py
+  seismic/
+    segy_loader.py
+    interpretation.py
+    viewer.py
+\end{lstlisting}
+
+\section{Application Shell and Navigation}
+The root class \texttt{GeomechanicsApp} assembles:
+\begin{itemize}
+    \item a left sidebar with context-sensitive navigation items;
+    \item a right content area with lazily initialized pages;
+    \item shared data state via a \texttt{DataManager} instance.
+\end{itemize}
+
+The landing page acts as a module selector. The geomechanics group includes Home, Stress, Moduli, and Strength pages. A separate Seismic page wraps the interpretation viewer. This split mirrors domain workflows while retaining one executable desktop workspace.
+
+\section{Shared Data State Pattern}
+A lightweight publish-subscribe mechanism is used in \texttt{DataManager}. Pages subscribe to data-change callbacks and refresh their local controls when datasets are loaded or cleared. This avoids redundant file dialogs and keeps the user workflow coherent across pages.
+
+\section{Control Flow and Inter-Module Communication}
+The application communication pattern is intentionally simple and explicit:
+\begin{itemize}
+    \item GUI page requests data through shared manager state.
+    \item Page performs column extraction, conversion, and parameter collection.
+    \item Computation module returns a pure tabular result without GUI coupling.
+    \item Page renders plots/tables and exposes export actions.
+\end{itemize}
+
+This separation minimizes hidden side effects and makes each layer independently testable.
+
+\section{Scalability and Maintainability Perspective}
+Although the current implementation targets single-dataset interactive analysis, the architecture already supports future scaling:
+\begin{itemize}
+    \item additional pages can be plugged into navigation without redesigning core shell;
+    \item computation modules can be extended independently of UI changes;
+    \item export interfaces can feed batch pipelines in later versions.
+\end{itemize}
+
+From a software engineering perspective, this is a favorable baseline for transitioning from prototype to production-grade scientific tool.
+
+\section{Architectural Diagram (Logical)}
+\begin{figure}[H]
+\centering
+\fbox{\parbox{0.9\linewidth}{
+\textbf{GUI Layer} (CustomTkinter pages) \\
+$\downarrow$ \\
+\textbf{Service Layer} (DataManager, column mapping, parameter parsing) \\
+$\downarrow$ \\
+\textbf{Computation Layer} (stress\_calc, moduli\_calc, strength\_calc) \\
+$\downarrow$ \\
+\textbf{Visualization Layer} (Matplotlib plots, Treeview tables, export) \\
+$\downarrow$ \\
+\textbf{Persistence Layer} (CSV/XLSX input-output, SEG-Y input)
+}}
+\caption{Logical architecture of the desktop geomechanics workbench}
+\end{figure}
+
+\chapter{GUI Design and User Experience}
+\section{Landing and Home Experience}
+The landing page introduces two major workspaces: Geomechanics and Seismic. This clarifies intent at first interaction and reduces cognitive load for users with mixed tasks.
+
+The Home page provides:
+\begin{itemize}
+    \item file upload for CSV/XLSX;
+    \item preview table for initial inspection;
+    \item dynamic status bar showing rows, columns, and data types.
+\end{itemize}
+
+This acts as quality gate before computational analysis.
+
+\section{Domain Pages and Interaction Pattern}
+Stress, Moduli, and Strength pages share a consistent interaction pattern:
+\begin{enumerate}
+    \item map required columns (with auto-suggestions);
+    \item set model parameters and unit system;
+    \item trigger computation;
+    \item inspect multipanel depth plots;
+    \item review tabular output;
+    \item export results to CSV/XLSX.
+\end{enumerate}
+
+Consistency across pages decreases training time and error rates.
+
+\section{Error Handling and Feedback}
+Input validation is performed before numerical processing. Typical checks include:
+\begin{itemize}
+    \item required-column existence;
+    \item minimum row count;
+    \item numeric conversion errors;
+    \item physically invalid ranges.
+\end{itemize}
+When invalid states occur, message dialogs provide immediate corrective guidance.
+
+\section{Visualization Design Choices}
+Each analysis page embeds Matplotlib with a navigation toolbar for zoom/pan and exploration. Multi-panel figures are used so key relationships can be inspected simultaneously. Depth axis inversion follows geoscience convention where depth increases downward.
+
+\section{Detailed User Journey Across Geomechanics Pages}
+The intended user journey was designed to mirror a real interpretation session:
+\begin{enumerate}
+    \item \textbf{Home page:} user confirms that loaded data have expected dimensions and types.
+    \item \textbf{Stress page:} user derives stress state envelope and verifies gradient behavior.
+    \item \textbf{Moduli page:} user evaluates stiffness and impedance characteristics.
+    \item \textbf{Strength page:} user infers failure potential and fracture initiation tendency.
+\end{enumerate}
+
+This progression matches domain reasoning where stress context is often examined before deriving rock failure implications.
+
+\section{Usability Heuristics Applied in Implementation}
+Practical heuristics reflected in the interface include:
+\begin{itemize}
+    \item \textbf{Consistency:} similar placement of controls and outputs on all analysis pages.
+    \item \textbf{Visibility:} explicit formula panels remind users of underlying physics.
+    \item \textbf{Error prevention:} invalid states are blocked before expensive computation.
+    \item \textbf{User control:} model parameters can be modified rapidly for what-if scenarios.
+\end{itemize}
+
+For technical software, these heuristics are not cosmetic; they directly affect analytical reliability.
+
+\chapter{Mathematical and Computational Formulation}
+\section{Stress Engine}
+For depth $z$, density $\rho$, and gravitational acceleration $g$:
+\begin{align}
+S_v(z) &= \int_0^z \rho(z')g\,dz' \\
+P_p(z) &= \rho_w g z \\
+S_{v,\mathrm{eff}} &= S_v - P_p
+\end{align}
+
+Dynamic Poisson's ratio from sonic velocities:
+\begin{equation}
+\nu = \frac{V_p^2 - 2V_s^2}{2\left(V_p^2 - V_s^2\right)}
+\end{equation}
+
+Horizontal stresses (model form):
+\begin{align}
+S_{h\min} &= \frac{\nu}{1-\nu}(S_v - P_p) + P_p + \sigma_{\mathrm{tectonic}} \\
+S_{H\max} &= \frac{\nu}{1-\nu}(S_v - P_p)(1+\epsilon_{\mathrm{ratio}}) + P_p + \sigma_{\mathrm{tectonic}}
+\end{align}
+
+Stress ratios:
+\begin{equation}
+K_{0,\min}=\frac{S_{h\min}}{S_v},\qquad K_{0,\max}=\frac{S_{H\max}}{S_v}
+\end{equation}
+
+\subsection{Numerical Realization of Overburden Integration}
+In implementation, overburden is computed using cumulative trapezoidal integration over depth samples. Let $(z_i, \rho_i)$ denote measured pairs. The discrete form is:
+\begin{equation}
+S_v(z_i) \approx S_v(z_0) + \sum_{k=1}^{i} \frac{\rho_k + \rho_{k-1}}{2}g(z_k-z_{k-1})
+\end{equation}
+with an explicit surface-to-first-sample contribution added to avoid underestimating shallow stress. This detail is important for practical logs whose first measurement is not exactly at $z=0$.
+
+\subsection{Model Assumptions and Interpretation Caution}
+The stress model assumes simplified constitutive behavior and uses hydrostatic pore pressure when no measured pore-pressure curve is supplied. Therefore, computed stress outputs should be interpreted as first-order estimates suitable for screening and comparative analysis, not as direct replacements for calibrated geomechanical field models.
+
+\section{Elastic Moduli Engine}
+Dynamic elastic moduli are computed after unit normalization:
+\begin{align}
+\nu &= \frac{V_p^2 - 2V_s^2}{2(V_p^2 - V_s^2)} \\
+E &= \rho V_s^2 \frac{3V_p^2 - 4V_s^2}{V_p^2 - V_s^2} \\
+G &= \rho V_s^2 \\
+K &= \rho\left(V_p^2 - \frac{4}{3}V_s^2\right) \\
+\lambda &= \rho(V_p^2 - 2V_s^2) \\
+M &= \rho V_p^2
+\end{align}
+
+Impedance and compressibility terms:
+\begin{align}
+AI &= \rho V_p \\
+SI &= \rho V_s \\
+\beta &= \frac{1}{K}
+\end{align}
+
+Auxiliary descriptors include $V_p/V_s$, $\lambda\rho$, and $\mu\rho$.
+
+\subsection{Physical Interpretation of Derived Elastic Terms}
+Each derived parameter informs a distinct rock-mechanics perspective:
+\begin{itemize}
+    \item $E$ and $G$ indicate resistance to axial and shear deformation.
+    \item $K$ reflects volumetric compressibility under confining stress.
+    \item $AI$ and $SI$ are sensitive to lithology-fluid effects and are useful for seismic tie interpretation.
+    \item $V_p/V_s$ often acts as a quick indicator for ductility and pore-fluid sensitivity.
+\end{itemize}
+
+Because the module computes all descriptors in one pass, users can cross-check consistency between stiffness and impedance behavior versus depth.
+
+\section{Strength and Failure Engine}
+Brittleness index is normalized from Young's modulus and Poisson's ratio:
+\begin{equation}
+BI = \frac{1}{2}\left[\frac{E-E_{\min}}{E_{\max}-E_{\min}}+\frac{\nu-\nu_{\max}}{\nu_{\min}-\nu_{\max}}\right]
+\end{equation}
+
+Friction angle options:
+\begin{align}
+\phi_{\mathrm{Lal}} &= \sin^{-1}\left(\frac{V_p-1000}{V_p+1000}\right) \\
+\phi_{\mathrm{Chang}} &= 57.8 - 105\nu
+\end{align}
+
+UCS and Mohr-Coulomb terms:
+\begin{align}
+UCS &= 2.28 + 4.1089E \quad (E\text{ in GPa, UCS in MPa}) \\
+c &= UCS\frac{1-\sin\phi}{2\cos\phi} \\
+\theta &= 45^\circ + \frac{\phi}{2} \\
+\sigma_{1,\mathrm{fail}} &= UCS + \sigma_3\tan^2\left(45^\circ + \frac{\phi}{2}\right)
+\end{align}
+
+Fracture initiation pressure indicator:
+\begin{equation}
+P_{\mathrm{frac}} = 3S_{h\min} - S_{H\max} - P_p + T
+\end{equation}
+
+\subsection{Failure Metrics as Decision Indicators}
+The strength module supports practical decision framing by combining empirical and criterion-based metrics:
+\begin{itemize}
+    \item brittleness trend for interval ranking;
+    \item friction-angle-dependent cohesion for failure envelope shaping;
+    \item $\sigma_{1,\mathrm{fail}}$ for confining-stress-aware screening;
+    \item $P_{\mathrm{frac}}$ for fracture initiation pressure context.
+\end{itemize}
+
+In operational terms, these metrics are used together, not in isolation. The interface design therefore encourages simultaneous visualization of related parameters.
+
+\section{Algorithmic Processing Sequence}
+For each analysis page, implementation follows a deterministic sequence:
+\begin{lstlisting}[style=pythonstyle,caption={General computation pipeline used across analysis pages}]
+1) Read mapped columns from shared dataframe
+2) Convert to numeric arrays and remove invalid rows
+3) Truncate arrays to common valid length
+4) Normalize units to internal computation conventions
+5) Execute vectorized equations
+6) Apply validity filters and numerical guards
+7) Return result dataframe with input + derived columns
+8) Render plots and table
+9) Export results on user request
+\end{lstlisting}
+
+This sequence improves reproducibility by ensuring repeat runs with unchanged inputs yield identical outputs.
+
+\section{Dataframe-Centric Computation Pattern}
+Each engine returns a structured Pandas DataFrame with original input vectors and derived outputs. This design simplifies:
+\begin{itemize}
+    \item preview-table rendering;
+    \item plot generation;
+    \item result export;
+    \item downstream reproducibility.
+\end{itemize}
+
+\chapter{Seismic Interpretation Subsystem}
+\section{Module Intent}
+The seismic subsystem complements geomechanics pages by introducing interpretation-oriented interaction over seismic sections. It is integrated as a dedicated page to maintain architectural consistency while supporting different data semantics.
+
+\section{Data Loading Modes}
+Two data-loading routes are provided:
+\begin{itemize}
+    \item \textbf{SEG-Y loading:} via \texttt{segyio} with geometry-tolerant fallback.
+    \item \textbf{Synthetic cube generation:} controlled by inline, crossline, and sample counts.
+\end{itemize}
+
+When SEG-Y geometry is incomplete or invalid, the loader can still recover data through a trace-based fallback path. This is critical for real-world files with inconsistent metadata.
+
+\section{Interactive Controls}
+The viewer includes:
+\begin{itemize}
+    \item inline/crossline section mode switching;
+    \item index sliders with safe singleton-axis handling;
+    \item colormap and amplitude contrast control;
+    \item robust percentile-based auto-range;
+    \item horizon and fault picking (mouse-driven);
+    \item simple horizon auto-tracking from seed pick;
+    \item CSV export of interpretation picks.
+\end{itemize}
+
+\section{Interpretation Data Model}
+An \texttt{InterpretationModel} stores horizons and faults as lists of point segments and exports flattened records with pick type labels. This lightweight model keeps the interpretation state explicit and serializable.
+
+\section{Seismic Display Robustness Considerations}
+Real SEG-Y datasets may exhibit broken geometry descriptors, extreme amplitude outliers, or very large trace counts. The implemented viewer addresses these through:
+\begin{itemize}
+    \item safe metadata conversion with fallbacks when inline/crossline vectors are unavailable;
+    \item fallback trace-mode cube loading for geometry-deficient files;
+    \item percentile-based auto clipping ($P2$--$P98$) for stable initial contrast;
+    \item redraw debouncing during slider movement to protect UI responsiveness.
+\end{itemize}
+
+These safeguards are essential for practical usability in heterogeneous seismic archives.
+
+\chapter{Implementation Details}
+\section{Entry Point and Page Factory}
+The root window predefines navigation items, creates a shared data manager, and resolves pages lazily by key. This avoids creating heavy plot pages until needed and improves startup responsiveness.
+
+\section{Column Auto-Mapping}
+Domain pages implement heuristic matching using common aliases (for example: depth, md, tvd, rhob, vp, vs). This is practical because field datasets often vary in naming conventions.
+
+\section{Unit Normalization Strategy}
+The computation layer standardizes to SI internally where needed and supports input modes such as:
+\begin{itemize}
+    \item SI with velocities in m/s;
+    \item SI with velocities in km/s;
+    \item FIELD with depth in ft and density in g/cc.
+\end{itemize}
+This reduces formula branching and prevents mixed-unit errors.
+
+\section{Numerical Stability Measures}
+Common protections include:
+\begin{itemize}
+    \item \texttt{numpy.errstate} for divide-by-zero and invalid operations;
+    \item clipping or NaN assignment for physically invalid values;
+    \item minimum-data checks before gradient and integration operations;
+    \item percentile-based amplitude clipping in seismic display.
+\end{itemize}
+
+\section{Export and Interoperability}
+Computed outputs are exported to CSV or XLSX. This ensures compatibility with reporting workflows, statistical tools, and reservoir engineering platforms.
+
+\section{Code Organization and Separation of Concerns}
+Implementation follows a clear separation of concerns:
+\begin{itemize}
+    \item \textbf{pages/:} presentation logic, user controls, plotting, and messages;
+    \item \textbf{computations/:} equation engines and vectorized numerical operations;
+    \item \textbf{seismic/:} SEG-Y loading, interpretation model, and seismic rendering;
+    \item \textbf{data\_loader.py:} shared ingestion and dataset lifecycle.
+\end{itemize}
+
+This organization makes future refactoring and testing significantly easier than monolithic script approaches.
+
+\section{Exception Handling Strategy}
+The application handles both recoverable and critical exceptions. Recoverable exceptions, such as invalid numeric inputs, are surfaced through user-facing dialogs. Lower-level callback exceptions are also printed for diagnosis, reducing silent failures in GUI event-driven contexts. This dual strategy supports both user guidance and developer maintainability.
+
+\chapter{Validation and Evaluation}
+\section{Validation Approach}
+Validation was performed in three layers:
+\begin{enumerate}
+    \item \textbf{Formula conformance checks:} code equations compared with documented formulas.
+    \item \textbf{Behavioral checks:} GUI interactions validated for expected data-flow states.
+    \item \textbf{Robustness checks:} edge-case handling for missing columns, invalid entries, and irregular seismic metadata.
+\end{enumerate}
+
+\section{Representative Test Scenarios}
+\begin{longtable}{p{4.5cm}p{9.5cm}}
+\caption{Representative validation scenarios}\label{tab:validation} \\
+\toprule
+Scenario & Expected behavior \\
+\midrule
+\endfirsthead
+\toprule
+Scenario & Expected behavior \\
+\midrule
+\endhead
+Load valid CSV/XLSX dataset & Data preview populates, status updates, analysis pages refresh column options. \\
+Missing required columns & GUI blocks computation and prompts user to select valid columns. \\
+Non-numeric values in key columns & Coercion and filtering prevent crashes; insufficient data triggers clear warning. \\
+Stress compute with/without sonic logs & With Vp/Vs, dynamic Poisson ratio is used; otherwise fallback Poisson input is applied. \\
+Moduli compute in FIELD units & Internal conversion to SI and consistent output table generation. \\
+Strength compute with friction method toggle & Changes in $\phi$ formulation propagate to UCS/cohesion/failure outputs. \\
+SEG-Y with incomplete geometry metadata & Loader uses safe conversion and fallback trace-mode cube. \\
+Seismic contrast slider drag & Debounced redraw maintains responsive and stable rendering. \\
+\bottomrule
+\end{longtable}
+
+\section{Observed Benefits}
+\begin{itemize}
+    \item Reduced manual effort across repetitive geomechanics calculations.
+    \item Improved reproducibility via deterministic DataFrame outputs and export.
+    \item Better interpretability through synchronized plots and equation-aware UI.
+    \item Increased robustness for imperfect field data and SEG-Y variability.
+\end{itemize}
+
+\section{Qualitative Performance Assessment}
+Although this work is not benchmarked as a high-performance computing system, practical runtime behavior in typical desktop usage is favorable due to vectorized NumPy/Pandas operations and lazy page initialization. For medium-sized tabular datasets, user-perceived response is near-interactive. Seismic redraw performance remains usable through debounced updates and contrast clipping controls.
+
+\section{Reliability and Reproducibility Assessment}
+Reliability in this context is evaluated as consistency of outputs under identical inputs and parameters. The deterministic computation pipeline, explicit unit conversions, and tabular output export contribute directly to reproducibility. This is particularly important for thesis and industry contexts where interpretations may need to be audited or repeated months later.
+
+\section{Threats to Validity}
+Potential threats to validity include:
+\begin{itemize}
+    \item assumptions in empirical correlations (for example UCS from dynamic modulus);
+    \item simplified pore-pressure representation when measured curves are absent;
+    \item sensitivity of some outputs to noisy or poorly conditioned sonic logs;
+    \item dependence on user-selected columns and parameter values.
+\end{itemize}
+
+These limitations are partly mitigated by formula visibility, explicit parameter controls, and the ability to rerun alternative scenarios quickly.
+
+\section{Limitations of Current Implementation}
+\begin{itemize}
+    \item No built-in uncertainty quantification or probabilistic propagation.
+    \item Single-user desktop context; no shared project database.
+    \item Limited automation for calibration against measured test data.
+    \item No integrated reporting template generation from within GUI.
+\end{itemize}
+
+\chapter{Discussion}
+\section{Contribution to Geomechanics Practice}
+This work demonstrates that desktop GUI engineering can translate geomechanics formulas into a coherent and auditable workflow, reducing barriers for users who are domain experts but not full-time programmers. The implementation balances numerical transparency with interaction design by exposing both equations and plots in the same operational context.
+
+\section{Design Trade-offs}
+A desktop architecture was favored over web deployment due to local-data workflows and scientific plotting integration. The chosen framework and package ecosystem enable rapid domain prototyping, though advanced cross-platform packaging and enterprise deployment pipelines may require additional engineering.
+
+\section{Extensibility Potential}
+The modular separation of page views and computation engines enables straightforward expansion. Candidate additions include:
+\begin{itemize}
+    \item wellbore stability module with mud-window analysis;
+    \item batch processing for multi-well projects;
+    \item ML-assisted lithofacies-aware parameter tuning;
+    \item uncertainty envelopes and sensitivity dashboards;
+    \item integrated report builder with figure/table auto-capture.
+\end{itemize}
+
+\section{Academic and Practical Implications}
+From an academic standpoint, this study demonstrates a replicable pathway for translating theory-heavy geomechanics equations into human-usable computational systems without obscuring assumptions. From a practical standpoint, it offers a template for small technical teams to build domain tools that are both transparent and operational.
+
+The broader implication is that GUI design should be treated as part of scientific method implementation, not merely as interface packaging. In this project, design decisions influenced error rates, interpretation speed, and confidence in results.
+
+\chapter{Conclusion and Recommendations}
+\section{Conclusion}
+The study successfully designed and implemented a desktop-based GUI application applicable to geomechanics study. The resulting system integrates data loading, stress-moduli-strength computations, seismic interpretation utilities, and export capability in a unified interface. The architecture demonstrates that practical software design can preserve domain rigor while improving accessibility and repeatability.
+
+The developed application confirms the central hypothesis of this thesis: a carefully designed GUI significantly improves operational geomechanics workflow quality by structuring user actions, minimizing manual inconsistency, and providing immediate visual and numerical feedback.
+
+\section{Recommendations}
+\begin{enumerate}
+    \item Add unit-aware metadata validators at import stage to further reduce preprocessing error.
+    \item Introduce benchmark datasets and regression tests for long-term maintainability.
+    \item Extend stress models with pore-pressure alternatives and tectonic regime templates.
+    \item Expand seismic module into full horizon management and map-view integration.
+    \item Provide automated PDF reporting directly from computed outputs and charts.
+\end{enumerate}
+
+\section{Future Work Roadmap}
+To move from thesis prototype toward production-grade platform, a staged roadmap is proposed:
+\begin{enumerate}
+    \item \textbf{Phase I (quality hardening):} add regression tests, reference datasets, and input schema checks.
+    \item \textbf{Phase II (feature expansion):} include advanced pore-pressure models, wellbore stability, and uncertainty analysis.
+    \item \textbf{Phase III (workflow integration):} add report generation, project sessions, and optional multi-well batch processing.
+    \item \textbf{Phase IV (deployment maturity):} package installers, versioned data contracts, and user telemetry for usability refinement.
+\end{enumerate}
+
+This roadmap preserves the current modular core while enabling progressive capability growth.
+
+\chapter*{References}
+\addcontentsline{toc}{chapter}{References}
+\begin{enumerate}
+    \item Bradford, I. D. R., Fuller, J., Thompson, P. J., and Walsgrove, T. R. (1998). Benefits of assessing the solids production risk in a North Sea reservoir using elastoplastic modelling.
+    \item Chang, C., Zoback, M. D., and Khaksar, A. (2006). Empirical relations between rock strength and physical properties in sedimentary rocks.
+    \item Hubbert, M. K., and Willis, D. G. (1957). Mechanics of hydraulic fracturing.
+    \item Lal, M. (1999). Shale stability: drilling fluid interaction and failure criteria.
+    \item Rickman, R., Mullen, M. J., Petre, J. E., Grieser, B., and Kundert, D. (2008). A practical use of shale petrophysics for stimulation design optimization.
+    \item Terzaghi, K. (1943). Theoretical Soil Mechanics.
+    \item Zoback, M. D. (2007). Reservoir Geomechanics.
+\end{enumerate}
+
+\appendix
+
+\chapter{Installation and Execution}
+\section{Suggested Environment Setup}
+\begin{lstlisting}[style=pythonstyle,caption={Example setup commands}]
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+\end{lstlisting}
+
+\section{Runtime Dependencies (Example)}
+\begin{itemize}
+    \item customtkinter
+    \item pandas
+    \item numpy
+    \item scipy
+    \item matplotlib
+    \item pillow
+    \item openpyxl
+    \item segyio (optional, for SEG-Y)
+\end{itemize}
+
+\chapter{Suggested Dataset Columns}
+\begin{table}[H]
+\centering
+\caption{Typical input columns for geomechanics pages}
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+Parameter & Typical aliases in field files \\
+\midrule
+Depth & depth, md, tvd, measured depth, depth\_m, depth\_ft \\
+Density & density, rhob, rho, bulk\_density, den \\
+Vp & vp, dtc, p-wave, compressional, vp\_m/s, vp\_ft/s \\
+Vs & vs, dts, s-wave, shear, vs\_m/s, vs\_ft/s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Example Thesis Customization Notes}
+Before final submission, replace placeholders for author, department, and institution, and align referencing style with your university guide (APA, Harvard, IEEE, or Vancouver as required). You may also split this single-file thesis into chapter files using \texttt{\textbackslash input\{\}} if your institution prefers multi-file structure.
+
+\end{document}

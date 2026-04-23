@@ -15,10 +15,12 @@ from PIL import Image
 
 from app.icons import get_icon
 from app.data_loader import DataManager
+from app.pages.landing import LandingPage
 from app.pages.home import HomePage
 from app.pages.stress import StressPage
 from app.pages.moduli import ModuliPage
 from app.pages.strength import StrengthPage
+from app.pages.seismic import SeismicPage
 from app.pages.placeholder import PlaceholderPage
 
 
@@ -29,10 +31,12 @@ ctk.set_default_color_theme("blue")
 
 # ── Navigation definitions ────────────────────────────────────────
 NAV_ITEMS = [
-    {"key": "home",      "label": "HOME",                  "icon": "home",     "color": "#00d4ff"},
+    {"key": "landing",   "label": "HOME",                  "icon": "home",     "color": "#00d4ff"},
+    {"key": "home",      "label": "GEOMECH",               "icon": "home",     "color": "#00d4ff"},
     {"key": "stress",    "label": "STRESS",                 "icon": "stress",   "color": "#ff6b6b"},
     {"key": "moduli",    "label": "MODULI",                 "icon": "moduli",   "color": "#feca57"},
     {"key": "strength",  "label": "STRENGTH &\nFAILURE",    "icon": "strength", "color": "#ff9ff3"},
+    {"key": "seismic",   "label": "SEISMIC",                "icon": "home",     "color": "#8ecae6"},
 ]
 
 
@@ -41,6 +45,7 @@ class GeomechanicsApp(ctk.CTk):
 
     WIDTH = 1280
     HEIGHT = 780
+    GEOMECH_KEYS = {"home", "stress", "moduli", "strength"}
 
     def __init__(self):
         super().__init__()
@@ -63,8 +68,8 @@ class GeomechanicsApp(ctk.CTk):
         self._build_sidebar()
         self._build_content_area()
 
-        # Show home page by default
-        self._select_page("home")
+        # Show landing page by default
+        self._select_page("landing")
 
     # ══════════════════════════════════════════════════════════════
     #  SIDEBAR
@@ -97,6 +102,7 @@ class GeomechanicsApp(ctk.CTk):
 
         # Navigation buttons
         self.nav_buttons: dict[str, ctk.CTkButton] = {}
+        self.nav_rows: dict[str, int] = {}
         self._ctk_icons: dict[str, ctk.CTkImage] = {}
 
         for idx, item in enumerate(NAV_ITEMS):
@@ -120,6 +126,20 @@ class GeomechanicsApp(ctk.CTk):
             )
             btn.grid(row=idx + 2, column=0, padx=10, pady=3)
             self.nav_buttons[item["key"]] = btn
+            self.nav_rows[item["key"]] = idx + 2
+
+    def _update_sidebar_visibility(self, active_key: str):
+        """Show geomechanics nav items only while inside geomechanics pages."""
+        show_geomech = active_key in self.GEOMECH_KEYS
+
+        for key, btn in self.nav_buttons.items():
+            if key in self.GEOMECH_KEYS and not show_geomech:
+                btn.grid_remove()
+            elif key == "seismic" and active_key != "seismic":
+                btn.grid_remove()
+            else:
+                row = self.nav_rows[key]
+                btn.grid(row=row, column=0, padx=10, pady=3)
 
     # ══════════════════════════════════════════════════════════════
     #  CONTENT AREA
@@ -143,7 +163,13 @@ class GeomechanicsApp(ctk.CTk):
             return self.pages[key]
 
         try:
-            if key == "home":
+            if key == "landing":
+                page = LandingPage(
+                    self.content,
+                    on_open_geomech=lambda: self._select_page("home"),
+                    on_open_seismic=lambda: self._select_page("seismic"),
+                )
+            elif key == "home":
                 page = HomePage(self.content, data_manager=self.dm)
             elif key == "stress":
                 page = StressPage(self.content, data_manager=self.dm)
@@ -151,6 +177,8 @@ class GeomechanicsApp(ctk.CTk):
                 page = ModuliPage(self.content, data_manager=self.dm)
             elif key == "strength":
                 page = StrengthPage(self.content, data_manager=self.dm)
+            elif key == "seismic":
+                page = SeismicPage(self.content)
             else:
                 # Find matching nav item for title/color
                 info = next((n for n in NAV_ITEMS if n["key"] == key), None)
@@ -174,6 +202,8 @@ class GeomechanicsApp(ctk.CTk):
         return page
 
     def _select_page(self, key: str):
+        self._update_sidebar_visibility(key)
+
         # Hide all visible pages
         for p in self.pages.values():
             p.grid_forget()
